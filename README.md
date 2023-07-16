@@ -65,7 +65,7 @@ for category in passing_score['Категория'].unique():
 writer.close()
 ```
 ---
-
+> Дополнительную информацию по работе с Google Colab можете найти на [главной странице Google Colab](https://colab.research.google.com/?hl=ru)
 
 ### FEFU - py version
 
