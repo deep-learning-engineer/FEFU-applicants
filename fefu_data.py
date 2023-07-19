@@ -85,10 +85,10 @@ def data_loading(finance):
                      "ajax.php?mode=class&c=dvfu%3Aadmission.spd.new&action=getTrainingDirectionList"
 
     # Загрузка специальностей
-    FEFU_speciality = get_speciality(url_speciality, finance)
+    fefu_speciality = get_speciality(url_speciality, finance)
 
     # Загрузка данных об абитуриентах
-    for speciality in FEFU_speciality:
+    for speciality in fefu_speciality:
         get_data(url_data, speciality, finance)
 
 
@@ -97,19 +97,18 @@ def data_loading(finance):
 
 def incoming_students(category):
     """ Формирование DataFrame с поступившими абитуриентами
-            по определенной специальности
+        по определенной специальности
     """
-    global data_students, count_place, students_received
+    global students_received, count_place, data_students
 
-    start_priority = 1
-    old_len = -1
-
-    while len(students_received) != old_len:  # Выполняем цикл до тех пор, пока кол-во поступивших
-        old_len = len(students_received)  # абитуриентов не станет равным 0
+    not_students = 0
+    while not_students != len(count_place[category]):  # Выполняем цикл до тех пор, пока в
+        not_students = 0  # не останется абитуриентов на все специальности
 
         for speciality in count_place[category]:
             # Проверим остались ли места на данную специальность
             if count_place[category][speciality] == 0:
+                not_students += 1
                 continue
 
             # Формируем DataFrame по специальности и сортируем в порядке убывания
@@ -121,6 +120,7 @@ def incoming_students(category):
             speciality_data = speciality_data.iloc[:count_place[category][speciality]]
             # Проверяем не пустой ли speciality_data
             if len(speciality_data) == 0:
+                not_students += 1
                 continue
 
             # Перебираем проходящих на данную специальность абитуриентов
@@ -145,7 +145,7 @@ def incoming_students(category):
                         data_students.drop(labels=[i], inplace=True)
                         continue
 
-                        # Добовляем информацию о новом, поступившем абитуриенте
+                # Добовляем информацию о новом, поступившем абитуриенте
                 item = pd.DataFrame([student])
                 item["БВИ"] = item["БВИ"].astype("boolean")
                 students_received = pd.concat([students_received, item])
@@ -156,20 +156,19 @@ def incoming_students(category):
                 # Удаляем из общих данных уже поступивших абитуриентов
                 data_students.drop(labels=[i], inplace=True)
 
-        start_priority += 1
 
-
-"""
-Для бюджетной основы сначала определяем поступивших на квотные места абитуриентов, 
-оставшиеся места переходят в места 'На общих основаниях', 
-только после обновления мест определяем поступивших на общих основаниях.
-Для платной основы всё легче, так как присутствуют только места 'На общих основаниях'.
+"""Для бюджетной основы сначала определяем поступивших абитуриентов на общих основаниях, затем на квотные места, 
+   оставшиеся места переходят в места 'На общих основаниях', дополняем списки 'На общих основаниях'.
+   Для платной основы всё легче, так как присутствуют только места 'На общих основаниях'.
 """
 
 
 def get_students_received(finance):
     """ Формирование DataFrame с поступившими абитуриентами """
     global count_place
+
+    # Определяем поступивших абитуриентов на общих основаниях
+    incoming_students('На общих основаниях')
 
     if finance == 'Бюджетная основа':
         kvota = ['Имеющие особое право', 'Отдельная квота', 'Целевой прием']
@@ -183,7 +182,7 @@ def get_students_received(finance):
                 count_place['На общих основаниях'][speciality] += count_place[category][speciality]
                 count_place[category][speciality] = 0
 
-        # Определяем поступивших абитуриентов на общих основаниях
+        # Дополняем поступивших абитуриентов на общих основаниях
         incoming_students('На общих основаниях')
 
     else:
@@ -206,7 +205,8 @@ if __name__ == "__main__":
         data_students = pd.DataFrame(data_students).drop_duplicates()
 
         # Создадим переменную для хранения поступивших абитуриентов
-        students_received = pd.DataFrame({'СНИЛС': [], 'Специальность': [], 'Балл': [], 'Приоритет': [], 'БВИ': [], 'Категория': []})
+        students_received = pd.DataFrame({'СНИЛС': [], 'Специальность': [], 'Балл': [],
+                                          'Приоритет': [], 'БВИ': [], 'Категория': []})
         # Сформируем DataFrame с поступившими абитуриентами
         get_students_received(finance)
 
