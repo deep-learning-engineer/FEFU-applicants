@@ -145,7 +145,7 @@ def incoming_students(category):
                         data_students.drop(labels=[i], inplace=True)
                         continue
 
-                # Добовляем информацию о новом, поступившем абитуриенте
+                # Добавляем информацию о новом, поступившем абитуриенте
                 item = pd.DataFrame([student])
                 item["БВИ"] = item["БВИ"].astype("boolean")
                 students_received = pd.concat([students_received, item])
